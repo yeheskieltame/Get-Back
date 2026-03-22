@@ -52,12 +52,12 @@ function buildPrompt(conversationHistory, newMessage, direction) {
 function runClaude(prompt, systemPrompt) {
   return new Promise((resolve, reject) => {
     const args = [
-      '-p', prompt,
-      '--no-input',
+      '--print',
+      '--output-format', 'text',
     ];
 
     if (systemPrompt) {
-      args.push('--system-prompt', systemPrompt);
+      args.push('--append-system-prompt', systemPrompt);
     }
 
     if (config.claudeModel) {
@@ -70,6 +70,10 @@ function runClaude(prompt, systemPrompt) {
       timeout: 120_000,
       env: { ...process.env },
     });
+
+    // Send prompt via stdin
+    proc.stdin.write(prompt);
+    proc.stdin.end();
 
     let stdout = '';
     let stderr = '';

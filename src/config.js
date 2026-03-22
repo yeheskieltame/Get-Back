@@ -3,6 +3,7 @@ import 'dotenv/config';
 const config = {
   // WhatsApp
   targetNumber: process.env.TARGET_NUMBER || '',
+  practiceNumber: process.env.PRACTICE_NUMBER || '',
   authDir: process.env.AUTH_DIR || './auth_info',
 
   // Telegram

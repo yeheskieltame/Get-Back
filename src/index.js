@@ -5,12 +5,18 @@ import * as strategy from './strategy.js';
 
 // ── State ─────────────────────────────────────────────────────────
 let isProcessing = false;
+let practiceMode = true; // Start in practice mode for safety
+let activeTargetJid = config.practiceNumber
+  ? config.practiceNumber.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
+  : config.targetJid;
 
 // ── Boot ──────────────────────────────────────────────────────────
 
 async function main() {
   console.log('\n=== GET-BACK Agent ===');
   console.log(`Target: Nopi (${config.targetNumber})`);
+  console.log(`Practice: ${config.practiceNumber || 'none'}`);
+  console.log(`Mode: ${practiceMode ? 'PRACTICE' : 'LIVE'}`);
   console.log(`Claude: ${config.claudeBin} (${config.claudeModel})`);
   console.log(`Max unreplied: ${config.maxUnreplied}`);
   console.log(`Min wait: ${config.minWaitHours}h`);
@@ -29,7 +35,12 @@ async function main() {
     console.log('[Main] WhatsApp ready. Agent is active.\n');
   });
 
-  whatsapp.onMessage(async (text, rawMsg) => {
+  whatsapp.onMessage(async (text, rawMsg, jid) => {
+    // Only respond to active target
+    if (jid !== activeTargetJid) {
+      console.log(`[Main] Ignored message from ${jid} (not active target: ${activeTargetJid})`);
+      return;
+    }
     await handleNopiMessage(text);
   });
 
@@ -62,7 +73,7 @@ async function handleNopiMessage(text) {
     }
 
     // Send via WhatsApp
-    await whatsapp.sendToTarget(reply);
+    await whatsapp.sendToJid(activeTargetJid, reply);
 
     // Record in strategy state
     strategy.recordSent(reply);
@@ -87,21 +98,53 @@ async function handleUserCommand(text) {
   if (cmd === '/start' || cmd === '/help') {
     await telegram.reportCustom(
       `*Get-Back Agent Commands*\n\n` +
+      `*Mode:*\n` +
+      `/mode - Lihat mode saat ini\n` +
+      `/practice - Switch ke mode latihan (Bima)\n` +
+      `/live - Switch ke mode live (Nopi)\n\n` +
+      `*Actions:*\n` +
       `/status - Status agent & strategy\n` +
-      `/send - Kirim pesan proaktif ke Nopi\n` +
-      `/say <pesan> - Kirim pesan spesifik ke Nopi\n` +
-      `/phase - Lihat phase PDKT saat ini\n` +
-      `/history - Lihat history percakapan\n` +
+      `/send - Kirim pesan proaktif\n` +
+      `/say <pesan> - Kirim pesan spesifik\n` +
+      `/phase - Lihat phase PDKT\n` +
+      `/history - History percakapan\n` +
       `/stop - Hentikan agent\n\n` +
-      `Atau kirim pesan biasa untuk ngobrol dengan agent tentang strategi.`
+      `Atau kirim pesan biasa untuk minta saran strategi.`
     );
+    return;
+  }
+
+  if (cmd === '/mode') {
+    const targetName = practiceMode ? 'Bima (practice)' : 'Nopi (LIVE)';
+    await telegram.reportCustom(`*Mode:* ${practiceMode ? 'PRACTICE' : 'LIVE'}\n*Target:* ${targetName}\n*JID:* ${activeTargetJid}`);
+    return;
+  }
+
+  if (cmd === '/practice') {
+    if (!config.practiceNumber) {
+      await telegram.reportCustom('PRACTICE\\_NUMBER tidak di-set di .env');
+      return;
+    }
+    practiceMode = true;
+    activeTargetJid = config.practiceNumber.replace(/[^0-9]/g, '') + '@s.whatsapp.net';
+    await telegram.reportCustom(`*Switched to PRACTICE mode*\nTarget: Bima (${config.practiceNumber})\nSemua pesan akan dikirim ke Bima.`);
+    return;
+  }
+
+  if (cmd === '/live') {
+    practiceMode = false;
+    activeTargetJid = config.targetJid;
+    await telegram.reportCustom(`*Switched to LIVE mode*\nTarget: Nopi (${config.targetNumber})\nPerhatian: semua pesan sekarang dikirim ke Nopi!`);
     return;
   }
 
   if (cmd === '/status') {
     const state = strategy.getState();
+    const targetName = practiceMode ? 'Bima (practice)' : 'Nopi (LIVE)';
     await telegram.reportCustom(
       `*Agent Status*\n` +
+      `Mode: ${practiceMode ? 'PRACTICE' : 'LIVE'}\n` +
+      `Target: ${targetName}\n` +
       `Phase: ${state.phaseName}\n` +
       `Messages sent: ${state.sentCount}\n` +
       `Messages received: ${state.receivedCount}\n` +
@@ -124,7 +167,7 @@ async function handleUserCommand(text) {
       return;
     }
     try {
-      await whatsapp.sendToTarget(message);
+      await whatsapp.sendToJid(activeTargetJid, message);
       strategy.recordSent(message);
       await telegram.reportOutgoing(message, 'Manual');
     } catch (err) {
@@ -183,7 +226,7 @@ async function sendProactive() {
   const message = await strategy.generateProactive();
   if (!message) return;
 
-  await whatsapp.sendToTarget(message);
+  await whatsapp.sendToJid(activeTargetJid, message);
   strategy.recordSent(message);
 
   const state = strategy.getState();

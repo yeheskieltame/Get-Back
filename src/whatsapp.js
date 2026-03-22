@@ -84,11 +84,8 @@ export async function connect() {
       const jid = msg.key.remoteJid;
       if (!jid) continue;
 
-      // Only listen to target number (Nopi)
-      if (jid !== config.targetJid) {
-        console.log(`[WA] Ignored message from ${jid} (not target)`);
-        continue;
-      }
+      // Pass JID to callback, let index.js decide if it's the active target
+      // (supports practice mode switching)
 
       // Extract text
       const text =
@@ -100,10 +97,10 @@ export async function connect() {
 
       if (!text) continue;
 
-      console.log(`[WA] Message from Nopi: ${text.slice(0, 60)}`);
+      console.log(`[WA] Message from ${jid}: ${text.slice(0, 60)}`);
 
       if (onMessageCb) {
-        await onMessageCb(text, msg);
+        await onMessageCb(text, msg, jid);
       }
     }
   });
@@ -144,11 +141,25 @@ export async function sendToTarget(text) {
 }
 
 /**
- * Send a message to any JID.
+ * Send a message to any JID with typing indicator.
  */
-export async function sendMessage(jid, text) {
+export async function sendToJid(jid, text) {
   if (!sock) throw new Error('WhatsApp not connected');
+
+  try {
+    await sock.presenceSubscribe(jid);
+    await sock.sendPresenceUpdate('composing', jid);
+  } catch (e) {}
+
+  const typingDelay = Math.min(Math.max(text.length * 30, 1000), 5000);
+  await new Promise(r => setTimeout(r, typingDelay));
+
+  try {
+    await sock.sendPresenceUpdate('paused', jid);
+  } catch (e) {}
+
   await sock.sendMessage(jid, { text });
+  console.log(`[WA] Sent to ${jid}: ${text.slice(0, 60)}`);
 }
 
 export function getSocket() { return sock; }
