@@ -102,3 +102,42 @@ export async function askUser(question) {
 export async function reportCustom(message) {
   await sendTelegram(message);
 }
+
+// ── Polling for user commands ─────────────────────────────────────
+
+let lastUpdateId = 0;
+let commandHandler = null;
+
+export function onUserCommand(cb) { commandHandler = cb; }
+
+export async function startPolling() {
+  if (!config.telegramBotToken) return;
+  console.log('[TG] Polling for user commands...');
+  pollLoop();
+}
+
+async function pollLoop() {
+  try {
+    const res = await fetch(`${API_BASE}/getUpdates?offset=${lastUpdateId + 1}&timeout=30`);
+    const data = await res.json();
+
+    if (data.ok && data.result) {
+      for (const update of data.result) {
+        lastUpdateId = update.update_id;
+        const msg = update.message;
+        if (!msg || !msg.text) continue;
+        if (String(msg.chat.id) !== String(config.telegramChatId)) continue;
+
+        console.log(`[TG] User command: ${msg.text.slice(0, 60)}`);
+        if (commandHandler) {
+          await commandHandler(msg.text);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[TG] Poll error:', err.message);
+  }
+
+  // Continue polling
+  setTimeout(pollLoop, 1000);
+}

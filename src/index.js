@@ -19,6 +19,10 @@ async function main() {
   // Report boot to Telegram
   await telegram.reportBoot();
 
+  // Set up Telegram command handler
+  telegram.onUserCommand(handleUserCommand);
+  telegram.startPolling();
+
   // Set up WhatsApp callbacks
   whatsapp.onConnected(async (name) => {
     await telegram.reportConnected(name);
@@ -75,13 +79,101 @@ async function handleNopiMessage(text) {
   }
 }
 
-// ── Manual Commands via Telegram (future) ─────────────────────────
+// ── Telegram User Commands ────────────────────────────────────────
+
+async function handleUserCommand(text) {
+  const cmd = text.trim();
+
+  if (cmd === '/start' || cmd === '/help') {
+    await telegram.reportCustom(
+      `*Get-Back Agent Commands*\n\n` +
+      `/status - Status agent & strategy\n` +
+      `/send - Kirim pesan proaktif ke Nopi\n` +
+      `/say <pesan> - Kirim pesan spesifik ke Nopi\n` +
+      `/phase - Lihat phase PDKT saat ini\n` +
+      `/history - Lihat history percakapan\n` +
+      `/stop - Hentikan agent\n\n` +
+      `Atau kirim pesan biasa untuk ngobrol dengan agent tentang strategi.`
+    );
+    return;
+  }
+
+  if (cmd === '/status') {
+    const state = strategy.getState();
+    await telegram.reportCustom(
+      `*Agent Status*\n` +
+      `Phase: ${state.phaseName}\n` +
+      `Messages sent: ${state.sentCount}\n` +
+      `Messages received: ${state.receivedCount}\n` +
+      `Unreplied: ${state.unrepliedCount}\n` +
+      `Sentiment: ${state.lastSentiment || 'N/A'}\n` +
+      `WA connected: ${whatsapp.getSocket() ? 'Yes' : 'No'}`
+    );
+    return;
+  }
+
+  if (cmd === '/send') {
+    await sendProactive();
+    return;
+  }
+
+  if (cmd.startsWith('/say ')) {
+    const message = cmd.slice(5).trim();
+    if (!message) {
+      await telegram.reportCustom('Usage: /say <pesan yang mau dikirim>');
+      return;
+    }
+    try {
+      await whatsapp.sendToTarget(message);
+      strategy.recordSent(message);
+      await telegram.reportOutgoing(message, 'Manual');
+    } catch (err) {
+      await telegram.reportError('sendManual', err.message);
+    }
+    return;
+  }
+
+  if (cmd === '/phase') {
+    const state = strategy.getState();
+    await telegram.reportCustom(
+      `*Current Phase: ${state.phaseName}*\n\n` +
+      `Phase 1: Ice Breaker\n` +
+      `Phase 2: Show Change\n` +
+      `Phase 3: Emotional Reconnection\n` +
+      `Phase 4: Direct Talk\n\n` +
+      `Active: Phase ${state.phase}`
+    );
+    return;
+  }
+
+  if (cmd === '/history') {
+    const state = strategy.getState();
+    const history = state.history || [];
+    if (history.length === 0) {
+      await telegram.reportCustom('Belum ada percakapan.');
+      return;
+    }
+    const lines = history.slice(-10).map(h =>
+      `${h.role === 'user' ? 'Nopi' : 'Kiel'}: ${h.text.slice(0, 80)}${h.text.length > 80 ? '...' : ''}`
+    );
+    await telegram.reportCustom(`*Last ${lines.length} messages:*\n\n${lines.join('\n')}`);
+    return;
+  }
+
+  if (cmd === '/stop') {
+    await telegram.reportCustom('*Agent stopping...*');
+    process.exit(0);
+  }
+
+  // Free text = ask agent for advice
+  const advice = await strategy.askAdvice(text);
+  await telegram.reportCustom(`*Agent:* ${advice}`);
+}
 
 /**
- * Send a proactive message (called manually or on schedule).
- * Usage: import and call, or hook up to a Telegram command.
+ * Send a proactive message to Nopi.
  */
-export async function sendProactive() {
+async function sendProactive() {
   const check = strategy.canSendMessage();
   if (!check.allowed) {
     await telegram.reportWaiting(check.reason);

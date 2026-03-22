@@ -223,12 +223,28 @@ export function getState() {
     phase: currentPhase,
     phaseName: PHASES[currentPhase].name,
     unrepliedCount,
-    totalSent,
-    totalReceived,
+    sentCount: totalSent,
+    receivedCount: totalReceived,
+    lastSentiment: sentimentHistory.length > 0 ? sentimentHistory[sentimentHistory.length - 1] : null,
     lastSentTs,
     lastReceivedTs,
     recentSentiment: sentimentHistory.slice(-3),
+    history: conversationLog.slice(-20),
   };
+}
+
+export async function askAdvice(question) {
+  const state = getState();
+  const context = `Current phase: ${state.phaseName}. Messages sent: ${state.sentCount}. Messages received: ${state.receivedCount}. Unreplied: ${state.unrepliedCount}. Last sentiment: ${state.lastSentiment || 'none'}.`;
+
+  const prompt = `${context}\n\nUser (Kiel) is asking the agent for advice:\n${question}\n\nBerikan saran singkat sebagai relationship strategy advisor. Jawab dalam bahasa Indonesia, langsung to the point.`;
+
+  try {
+    const { analyze: runAnalysis } = await import('./claude.js');
+    return await runAnalysis(prompt);
+  } catch (err) {
+    return `Error: ${err.message}`;
+  }
 }
 
 export function getSystemPrompt() {
