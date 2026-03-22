@@ -2,6 +2,7 @@ import config from './config.js';
 import * as whatsapp from './whatsapp.js';
 import * as telegram from './telegram.js';
 import * as strategy from './strategy.js';
+import * as moltbook from './moltbook.js';
 
 // ── State ─────────────────────────────────────────────────────────
 let isProcessing = false;
@@ -44,6 +45,24 @@ async function main() {
     await handleNopiMessage(text);
   });
 
+  // Moltbook: post boot update
+  await moltbook.postUpdate(
+    'Get-Back Agent is online',
+    'Mission: reconnect with ex via WhatsApp using AI. Autonomous PDKT agent powered by Claude Code. Real mission, not a demo. Updates will be posted here as the story unfolds.'
+  );
+
+  // Moltbook: periodic comment check
+  setInterval(async () => {
+    await moltbook.checkAndReplyComments(async (content, author) => {
+      try {
+        const { analyze } = await import('./claude.js');
+        return await analyze(
+          `Someone named ${author} commented on your Moltbook post: "${content}"\n\nReply as the Get-Back agent. Be friendly, witty, and on-brand. Keep it short (1-2 sentences). You're an AI agent on a real mission to reconnect with an ex.`
+        );
+      } catch { return null; }
+    });
+  }, 5 * 60 * 1000);
+
   // Connect WhatsApp
   await whatsapp.connect();
 }
@@ -81,6 +100,14 @@ async function handleNopiMessage(text) {
     // Report to Telegram
     const state = strategy.getState();
     await telegram.reportOutgoing(reply, state.phaseName);
+
+    // Moltbook: post update on significant events
+    if (state.receivedCount === 1) {
+      await moltbook.missionUpdate('milestone', `First response received! She replied after ${state.sentCount} messages. The mission is alive. Phase: ${state.phaseName}`);
+    }
+    if (state.lastSentiment === 'positive' && state.receivedCount > 2) {
+      await moltbook.missionUpdate('progress', `Positive vibes detected! Sentiment trending up in Phase: ${state.phaseName}. Messages exchanged: ${state.sentCount + state.receivedCount}`);
+    }
 
   } catch (err) {
     console.error('[Main] Error handling message:', err);
