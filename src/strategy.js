@@ -1,4 +1,4 @@
-import { generateReply, analyze, recordOutgoing } from './claude.js';
+import { generateReply, analyze, recordOutgoing, getHistory as getClaudeHistory } from './claude.js';
 import * as telegram from './telegram.js';
 import config from './config.js';
 
@@ -229,19 +229,19 @@ export function getState() {
     lastSentTs,
     lastReceivedTs,
     recentSentiment: sentimentHistory.slice(-3),
-    history: conversationLog.slice(-20),
+    history: getClaudeHistory().slice(-20),
   };
 }
 
 export async function askAdvice(question) {
-  const state = getState();
-  const context = `Current phase: ${state.phaseName}. Messages sent: ${state.sentCount}. Messages received: ${state.receivedCount}. Unreplied: ${state.unrepliedCount}. Last sentiment: ${state.lastSentiment || 'none'}.`;
+  const phaseName = PHASES[currentPhase].name;
+  const lastSent = sentimentHistory.length > 0 ? sentimentHistory[sentimentHistory.length - 1].sentiment : 'none';
+  const context = `Current phase: ${phaseName}. Messages sent: ${totalSent}. Messages received: ${totalReceived}. Unreplied: ${unrepliedCount}. Last sentiment: ${lastSent}.`;
 
-  const prompt = `${context}\n\nUser (Kiel) is asking the agent for advice:\n${question}\n\nBerikan saran singkat sebagai relationship strategy advisor. Jawab dalam bahasa Indonesia, langsung to the point.`;
+  const prompt = `${context}\n\nUser (Kiel) bertanya ke agent:\n${question}\n\nBerikan saran singkat sebagai relationship strategy advisor. Jawab dalam bahasa Indonesia, langsung to the point.`;
 
   try {
-    const { analyze: runAnalysis } = await import('./claude.js');
-    return await runAnalysis(prompt);
+    return await analyze(prompt, 'Kamu adalah relationship strategy advisor untuk Get-Back agent.');
   } catch (err) {
     return `Error: ${err.message}`;
   }

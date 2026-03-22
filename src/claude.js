@@ -165,6 +165,10 @@ export function recordOutgoing(text) {
 /**
  * Get conversation stats
  */
+export function getHistory() {
+  return history;
+}
+
 export function getConversationStats() {
   return {
     messageCount: history.length,
