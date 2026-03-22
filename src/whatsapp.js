@@ -6,6 +6,7 @@ import makeWASocket, {
 } from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
+import qrcode from 'qrcode-terminal';
 import config from './config.js';
 
 const logger = pino({ level: config.logLevel });
@@ -34,7 +35,7 @@ export async function connect() {
       keys: makeCacheableSignalKeyStore(state.keys, logger),
     },
     logger,
-    printQRInTerminal: true,
+    // QR handled manually via connection.update event
     generateHighQualityLinkPreview: false,
     markOnlineOnConnect: false,
   });
@@ -45,8 +46,9 @@ export async function connect() {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
-      console.log('[WA] Scan QR code above with WhatsApp');
+      console.log('\n[WA] Scan this QR code with WhatsApp:');
       console.log('     WhatsApp > Settings > Linked Devices > Link a Device\n');
+      qrcode.generate(qr, { small: true });
     }
 
     if (connection === 'open') {
