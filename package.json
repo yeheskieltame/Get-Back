@@ -1,0 +1,29 @@
+{
+  "name": "get-back",
+  "version": "1.0.0",
+  "description": "AI agent that reconnects you with your ex via WhatsApp — powered by Claude, Baileys, and ERC-8004",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "setup": "npm install && cp -n .env.example .env && echo 'Done! Edit .env then run: npm start'"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.16",
+    "@hapi/boom": "^10.0.1",
+    "pino": "^9.6.0",
+    "qrcode-terminal": "^0.12.0",
+    "dotenv": "^16.4.7"
+  },
+  "keywords": [
+    "whatsapp",
+    "ai-agent",
+    "claude",
+    "erc-8004",
+    "hackathon",
+    "synthesis"
+  ],
+  "author": "Yeheskiel Yunus Tame",
+  "license": "MIT"
+}
