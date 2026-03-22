@@ -64,7 +64,7 @@ function runClaude(prompt, systemPrompt) {
       args.push('--model', config.claudeModel);
     }
 
-    args.push('--max-tokens', String(config.claudeMaxTokens));
+    // max-tokens not supported in claude CLI, removed
 
     const proc = spawn(config.claudeBin, args, {
       timeout: 120_000,
