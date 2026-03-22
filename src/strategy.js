@@ -1,4 +1,4 @@
-import { generateReply, analyze, recordOutgoing, getHistory as getClaudeHistory } from './claude.js';
+import { generateReply, analyze, recordOutgoing, getRawHistory as getClaudeHistory } from './claude.js';
 import * as telegram from './telegram.js';
 import config from './config.js';
 

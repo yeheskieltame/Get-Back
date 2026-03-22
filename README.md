@@ -80,6 +80,44 @@ Get-Back is not just an agent — it is an agent with an on-chain identity.
 
 This matters because autonomous agents need accountability. When an AI agent operates in the real world — talking to real people, making real decisions — there should be a verifiable record of what it did and how it performed. ERC-8004 provides that layer.
 
+## Live Demo — Agent in Action
+
+The agent has been tested live with real Telegram operator control. Here is a transcript from a practice session (March 23, 2026):
+
+```
+Operator: /start
+Agent:    ✅ Commands loaded — mode, send, say, phase, history, stop
+
+Operator: /mode
+Agent:    Mode: PRACTICE — Target: Bima (practice partner)
+
+Operator: /send
+Agent:    → "Eh Nopi, apa kabar? Lama sudah tidak dengar cerita.
+             Semoga sihat-sihat saja di sana"
+          Strategy: Ice Breaker (proactive)
+
+Operator: /send "help me practice before real mission"
+Agent:    → Full relationship strategy advice:
+           - Don't double text, wait for reply
+           - Prepare responses for all scenarios (short reply, long reply, anger, silence)
+           - Guardrails active: max 2 unreplied, minimum wait times
+           - Offered practice simulation mode
+
+Operator: "the system is really working!"
+Agent:    → Confirmed system status, gave phase-specific advice:
+           - Wait 2-3 days for response
+           - Reply casually with 15-30 min delay
+           - Don't stalk stories/status
+```
+
+The agent successfully:
+- Connected to WhatsApp via Baileys (QR scan, multi-device)
+- Accepted Telegram commands from the operator in real-time
+- Generated contextually appropriate ice breaker messages in the user's chat style
+- Provided strategic relationship advice with phase-aware guardrails
+- Maintained conversation context across multiple interactions
+- Enforced anti-spam limits (max 2 unreplied messages)
+
 ## Why This Exists
 
 Most hackathon projects are demos. They work on localhost, they use test data, and they solve hypothetical problems.

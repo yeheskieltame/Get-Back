@@ -163,9 +163,9 @@ export function recordOutgoing(text) {
 }
 
 /**
- * Get conversation stats
+ * Get raw conversation history
  */
-export function getHistory() {
+export function getRawHistory() {
   return history;
 }
 
