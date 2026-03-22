@@ -70,10 +70,16 @@ npm start
 
 ## ERC-8004: Agent With Receipts
 
-Get-Back is not just an agent — it is an agent with an on-chain identity.
+Get-Back is not just an agent — it is an agent with a **verified onchain identity**.
+
+**Registered on Base Mainnet:**
+- **Agent ID**: `35792`
+- **Registry**: `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432`
+- **Owner**: `0x77c4a1cD22005b67Eb9CcEaE7E9577188d7Bca82`
+- **Registration TX**: [View on BaseScan](https://basescan.org/tx/0x47624aeca0ff671ad303170022a281e4dfb6b56d777993d4462362e18dea69ac)
 
 **ERC-8004** gives the agent:
-- A verifiable identity on-chain (this agent exists, it has a mission)
+- A verifiable identity onchain (this agent exists, it has a mission)
 - Mission registration (objective: reconnect with target contact)
 - Receipts for every autonomous action (messages sent, phases transitioned, sentiment shifts)
 - Reputation derived from mission outcome (did the reconnection succeed?)
