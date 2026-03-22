@@ -2,7 +2,7 @@ import 'dotenv/config';
 
 const config = {
   // WhatsApp
-  targetNumber: process.env.TARGET_NUMBER || '6289580101088',
+  targetNumber: process.env.TARGET_NUMBER || '',
   authDir: process.env.AUTH_DIR || './auth_info',
 
   // Telegram
@@ -11,7 +11,7 @@ const config = {
 
   // Claude
   claudeBin: process.env.CLAUDE_BIN || 'claude',
-  claudeModel: process.env.CLAUDE_MODEL || 'claude-sonnet-4-6',
+  claudeModel: process.env.CLAUDE_MODEL || 'claude-opus-4-6',
   claudeMaxTokens: parseInt(process.env.CLAUDE_MAX_TOKENS || '1024', 10),
   maxContext: parseInt(process.env.MAX_CONTEXT || '20', 10),
   contextTtlMs: parseInt(process.env.CONTEXT_TTL_MINUTES || '60', 10) * 60_000,
@@ -21,7 +21,7 @@ const config = {
   minWaitHours: parseFloat(process.env.MIN_WAIT_HOURS || '1'),
 
   // Derived
-  targetJid: (process.env.TARGET_NUMBER || '6289580101088') + '@s.whatsapp.net',
+  targetJid: (process.env.TARGET_NUMBER || '') + '@s.whatsapp.net',
 
   logLevel: process.env.LOG_LEVEL || 'warn',
 };
