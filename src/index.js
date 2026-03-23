@@ -3,6 +3,7 @@ import * as whatsapp from './whatsapp.js';
 import * as telegram from './telegram.js';
 import * as strategy from './strategy.js';
 import * as moltbook from './moltbook.js';
+import * as audit from './audit.js';
 
 // ── State ─────────────────────────────────────────────────────────
 let isProcessing = false;
@@ -23,7 +24,8 @@ async function main() {
   console.log(`Min wait: ${config.minWaitHours}h`);
   console.log('');
 
-  // Report boot to Telegram
+  // Audit + report boot
+  audit.logBoot({ mode: practiceMode ? 'practice' : 'live', target: practiceMode ? config.practiceNumber : config.targetNumber, model: config.claudeModel });
   await telegram.reportBoot();
 
   // Set up Telegram command handler
@@ -42,6 +44,7 @@ async function main() {
       console.log(`[Main] Ignored message from ${jid} (not active target: ${activeTargetJid})`);
       return;
     }
+    audit.logIncoming(text);
     await handleNopiMessage(text);
   });
 
@@ -97,8 +100,9 @@ async function handleNopiMessage(text) {
     // Record in strategy state
     strategy.recordSent(reply);
 
-    // Report to Telegram
+    // Audit + report
     const state = strategy.getState();
+    audit.logOutgoing(reply, state.phaseName);
     await telegram.reportOutgoing(reply, state.phaseName);
 
     // Moltbook: post update on significant events
@@ -154,6 +158,7 @@ async function handleUserCommand(text) {
     }
     practiceMode = true;
     activeTargetJid = config.practiceNumber.replace(/[^0-9]/g, '') + '@s.whatsapp.net';
+    audit.logModeSwitch('practice', config.practiceNumber);
     await telegram.reportCustom(`*Switched to PRACTICE mode*\nTarget: Bima (${config.practiceNumber})\nSemua pesan akan dikirim ke Bima.`);
     return;
   }
@@ -161,6 +166,7 @@ async function handleUserCommand(text) {
   if (cmd === '/live') {
     practiceMode = false;
     activeTargetJid = config.targetJid;
+    audit.logModeSwitch('live', config.targetNumber);
     await telegram.reportCustom(`*Switched to LIVE mode*\nTarget: Nopi (${config.targetNumber})\nPerhatian: semua pesan sekarang dikirim ke Nopi!`);
     return;
   }
